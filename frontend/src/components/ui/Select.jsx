@@ -1,7 +1,7 @@
 import { forwardRef, useId } from 'react';
 
 const Select = forwardRef(function Select(
-  { label, error, options = [], placeholder, className = '', id, ...rest },
+  { label, error, options = [], placeholder, className = '', id, children, ...rest },
   ref
 ) {
   const autoId = useId();
@@ -26,21 +26,25 @@ const Select = forwardRef(function Select(
         aria-invalid={!!error}
         {...rest}
       >
-        {placeholder && (
-          <option value="" disabled>
-            {placeholder}
-          </option>
-        )}
-        {options.map((opt) =>
-          typeof opt === 'string' ? (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ) : (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          )
+        {children ?? (
+          <>
+            {placeholder && (
+              <option value="" disabled>
+                {placeholder}
+              </option>
+            )}
+            {options.map((opt) =>
+              typeof opt === 'string' ? (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ) : (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              )
+            )}
+          </>
         )}
       </select>
       {error && <span className="text-xs text-statusOverdue">{error}</span>}
