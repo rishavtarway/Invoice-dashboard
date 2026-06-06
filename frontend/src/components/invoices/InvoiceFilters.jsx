@@ -27,6 +27,7 @@ export default function InvoiceFilters({ value, onChange, onClear }) {
   }, [value.search]);
 
   useEffect(() => {
+    // Debounce search so we don't refetch on every keystroke
     const id = setTimeout(() => {
       if (searchInput !== value.search) {
         onChange({ ...value, search: searchInput, page: 1 });
@@ -35,6 +36,7 @@ export default function InvoiceFilters({ value, onChange, onClear }) {
     return () => clearTimeout(id);
   }, [searchInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Any filter change resets to page 1
   const set = (key, v) => onChange({ ...value, [key]: v, page: key !== 'page' ? 1 : value.page });
   const clear = () => {
     setSearchInput('');

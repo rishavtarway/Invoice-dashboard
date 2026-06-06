@@ -22,6 +22,7 @@ const DEFAULTS = {
   dueDateTo: undefined,
 };
 
+// URL search params are the single source of truth for filter state
 function readParams(searchParams) {
   const out = { ...DEFAULTS };
   for (const [k, v] of searchParams.entries()) {
@@ -61,6 +62,7 @@ export default function InvoicesPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  // Two-click delete with 3s window before reverting
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const deleteTimer = useRef();
 

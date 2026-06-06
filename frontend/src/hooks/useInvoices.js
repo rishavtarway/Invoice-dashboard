@@ -9,6 +9,7 @@ import {
 
 const KEY = ['invoices'];
 
+// Paginated list with cached previous data for smooth paging
 export function useInvoices(params) {
   return useQuery({
     queryKey: [...KEY, params],

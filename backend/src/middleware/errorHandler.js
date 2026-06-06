@@ -13,6 +13,7 @@ function notFoundHandler(req, res, next) {
   res.status(404).json({ error: `Route not found: ${req.method} ${req.originalUrl}` });
 }
 
+// Global error → JSON response
 function errorHandler(err, req, res, next) {
   if (res.headersSent) return next(err);
 

@@ -6,11 +6,13 @@ function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
+// Random INV-xxxxxxx
 function generateInvoiceId() {
   const n = Math.floor(10_000_00 + Math.random() * 89_999_99);
   return `INV-${String(n).padStart(7, '0')}`;
 }
 
+// Retry on collision
 async function generateUniqueInvoiceId(retries = 8) {
   for (let i = 0; i < retries; i += 1) {
     const id = generateInvoiceId();
@@ -20,6 +22,7 @@ async function generateUniqueInvoiceId(retries = 8) {
   throw new HttpError(500, 'Could not generate a unique invoiceId');
 }
 
+// Build mongo filter from query string
 function buildListFilter(query) {
   const filter = {};
   if (query.status) filter.status = query.status;
@@ -51,6 +54,7 @@ async function listInvoices(req, res) {
   const filter = buildListFilter(q);
 
   if (q.search) {
+    // Match invoiceId or any customer whose name matches
     const safe = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const invoiceIdRegex = new RegExp(safe, 'i');
     const matchingCustomers = await Customer.find({ name: invoiceIdRegex }, '_id').lean();
@@ -103,6 +107,7 @@ async function createInvoice(req, res) {
     throw new HttpError(400, 'dueDate must be on or after issueDate');
   }
 
+  // Server-computed tax and total — never trust client
   const tax = round2((amount * Number(taxRate)) / 100);
   const total = round2(amount + tax);
   const invoiceId = await generateUniqueInvoiceId();
@@ -144,6 +149,7 @@ async function updateInvoice(req, res) {
   if (patch.dueDate !== undefined) existing.dueDate = patch.dueDate;
 
   if (patch.amount !== undefined || patch.taxRate !== undefined) {
+    // Recompute derived fields if either input changed
     existing.tax = round2((existing.amount * existing.taxRate) / 100);
     existing.total = round2(existing.amount + existing.tax);
   }

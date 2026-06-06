@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Button from '../ui/Button';
 
+// Build a windowed list: 1, …, current-1, current, current+1, …, total
 function pageNumbers(current, total) {
   if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
   const pages = new Set([1, total, current, current - 1, current + 1]);

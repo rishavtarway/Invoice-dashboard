@@ -5,6 +5,7 @@ function formatZodError(error) {
   }));
 }
 
+// Returns a middleware that validates req.body/req.query/req.params
 function validate(schema, source = 'body') {
   return (req, res, next) => {
     const data = source === 'query' ? req.query : source === 'params' ? req.params : req.body;

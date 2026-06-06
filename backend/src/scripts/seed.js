@@ -12,6 +12,7 @@ function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
+// Look for seed file in a few predictable places
 function resolveSeedFile() {
   const argFile = process.argv.find((a) => a.startsWith('--file='));
   const explicit = argFile ? argFile.split('=')[1] : null;
@@ -66,6 +67,7 @@ async function run() {
     Invoice.collection.drop().catch(() => {}),
   ]);
 
+  // Dedupe customers by name + company
   const customerMap = new Map();
   for (const r of records) {
     const key = `${r.customer}::${r.company}`;
@@ -81,6 +83,7 @@ async function run() {
     idByName.set(c.name, c._id);
   }
 
+  // Map seed rows → invoice docs (recompute tax/total for safety)
   const invoicesToInsert = records.map((r) => {
     const customerId = idByName.get(r.customer);
     if (!customerId) throw new Error(`Missing customerId for ${r.customer}`);

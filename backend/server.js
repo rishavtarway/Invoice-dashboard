@@ -23,6 +23,7 @@ async function start() {
   });
 
   // Graceful shutdown
+  // Graceful shutdown
   const shutdown = (signal) => {
     console.log(`\n[server] ${signal} received — shutting down`);
     server.close(() => process.exit(0));

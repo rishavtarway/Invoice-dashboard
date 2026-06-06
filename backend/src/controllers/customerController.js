@@ -9,6 +9,7 @@ async function listCustomers(req, res) {
 }
 
 async function top5Customers(req, res) {
+  // Exclude Void — they are cancelled
   const pipeline = [
     { $match: { status: { $ne: 'Void' } } },
     {
@@ -58,6 +59,7 @@ async function customerProfile(req, res) {
 
   const matchStage = { customerId: new mongoose.Types.ObjectId(id) };
 
+  // Single aggregation for metrics + status breakdown
   const [metricsAgg] = await Invoice.aggregate([
     { $match: matchStage },
     {

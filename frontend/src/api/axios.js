@@ -8,6 +8,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Flatten server error → Error.message
 api.interceptors.response.use(
   (res) => res,
   (error) => {
