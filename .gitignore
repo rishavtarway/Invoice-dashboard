@@ -10,3 +10,6 @@ coverage
 .vscode
 .idea
 backend/uploads
+
+# Local-only troubleshooting reference — never push this
+LOCAL_*.md
