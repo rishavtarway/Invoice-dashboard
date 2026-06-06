@@ -6,9 +6,10 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import { invoiceFormSchema, STATUSES, TAX_RATES } from '../../schemas/invoiceSchema';
-import { formatCurrency, toISODate, computeTax } from '../../utils/format';
+import { toISODate } from '../../utils/format';
 import { useCreateInvoice, useUpdateInvoice } from '../../hooks/useInvoices';
 import { useCustomers } from '../../hooks/useCustomers';
+import InvoiceFormPreview from './InvoiceFormPreview';
 
 const today = () => toISODate(new Date());
 const inDays = (n) => {
@@ -57,6 +58,7 @@ export default function InvoiceModal({ open, onClose, invoice }) {
     defaultValues: defaults,
   });
 
+  // Reset form whenever the modal opens or the source invoice changes
   useEffect(() => {
     if (open) reset(defaults);
   }, [open, defaults, reset]);
@@ -65,8 +67,6 @@ export default function InvoiceModal({ open, onClose, invoice }) {
   const taxRate = watch('taxRate');
   const customerId = watch('customerId');
   const company = customers.find((c) => c._id === customerId)?.company || '—';
-  const tax = computeTax(Number(amount) || 0, Number(taxRate) || 0);
-  const total = (Number(amount) || 0) + tax;
 
   const onSubmit = (data) => {
     const payload = {
@@ -212,11 +212,7 @@ export default function InvoiceModal({ open, onClose, invoice }) {
           )}
         </div>
 
-        <div className="rounded-md border border-border bg-canvas px-3 py-2 text-xs text-inkSecondary">
-          Tax <span className="font-medium text-ink">{formatCurrency(tax)}</span> · Total{' '}
-          <span className="font-medium text-ink">{formatCurrency(total)}</span>{' '}
-          <span className="text-muted">(computed)</span>
-        </div>
+        <InvoiceFormPreview amount={amount} taxRate={taxRate} />
 
         <button type="submit" hidden />
       </form>
