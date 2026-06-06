@@ -85,6 +85,7 @@ Base URL: `/api`
 | GET    | `/customers`                | List all customers                                |
 | GET    | `/customers/top5`           | Top 5 customers by total billed (excludes Void)   |
 | GET    | `/customers/:id`            | Customer profile: metrics, status breakdown, history |
+| GET    | `/summary`                  | Global totals: Total billed, Total tax, # Invoices, # Customers |
 
 All query parameters, response shapes, and validation rules are documented inline in the controllers.
 

@@ -1,26 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { useInvoices } from '../hooks/useInvoices';
-import { useTop5Customers } from '../hooks/useCustomers';
+import { useSummary, useTop5Customers } from '../hooks/useCustomers';
 import MetricCard from '../components/ui/MetricCard';
 import Top5Card from '../components/customers/Top5Card';
 import { formatCurrency, formatNumber } from '../utils/format';
-import api from '../api/axios';
-import { TrendingUp, Users, Receipt, Calculator } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 export default function SummaryPage() {
   const navigate = useNavigate();
+  const { data: summary, isLoading: summaryLoading } = useSummary();
   const { data: top5 = [], isLoading: top5Loading } = useTop5Customers();
-
-  const { data: invoicesPage } = useInvoices({ page: 1, limit: 1 });
-  const totalInvoices = invoicesPage?.pagination?.total || 0;
-
-  const { data: customers = [] } = useQuery({
-    queryKey: ['customers', 'count'],
-    queryFn: () => api.get('/customers').then((r) => r.data),
-  });
-
-  const topTotal = top5.reduce((s, c) => s + c.totalBilled, 0);
 
   return (
     <div className="flex flex-col gap-6 px-6 py-6">
@@ -29,30 +17,26 @@ export default function SummaryPage() {
         <p className="text-xs text-inkSecondary">High-level metrics across the entire dataset</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="Total invoices"
-          value={formatNumber(totalInvoices)}
+          label="Total billed"
+          value={summary ? formatCurrency(summary.totalBilled, { hideCentsIfZero: true }) : '—'}
+          hint={summaryLoading ? 'Loading…' : 'Excludes Void'}
+        />
+        <MetricCard
+          label="Total tax"
+          value={summary ? formatCurrency(summary.totalTax, { hideCentsIfZero: true }) : '—'}
+          hint={summaryLoading ? 'Loading…' : 'Excludes Void'}
+        />
+        <MetricCard
+          label="# Invoices"
+          value={summary ? formatNumber(summary.invoiceCount) : '—'}
           hint="All statuses"
-          className="bg-surface"
         />
         <MetricCard
-          label="Customers"
-          value={formatNumber(customers.length)}
+          label="# Customers"
+          value={summary ? formatNumber(summary.customerCount) : '—'}
           hint="1:1 with company"
-          className="bg-surface"
-        />
-        <MetricCard
-          label="Top 5 combined"
-          value={formatCurrency(topTotal, { hideCentsIfZero: true })}
-          hint="Excludes Void"
-          className="bg-surface"
-        />
-        <MetricCard
-          label="Tax rates"
-          value="0 · 3 · 5 · 18 · 28%"
-          hint="GST buckets"
-          className="bg-surface"
         />
       </div>
 
@@ -89,34 +73,6 @@ export default function SummaryPage() {
             ))}
           </div>
         )}
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted">
-            <Receipt size={14} /> About this dataset
-          </div>
-          <p className="text-sm text-ink">
-            2,000 invoices spread across 61 customers (1:1 with company), 6 statuses
-            (Draft, Sent, Paid, Unpaid, Overdue, Void), 5 tax rates (0, 3, 5, 18, 28).
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted">
-            <Users size={14} /> Outstanding
-          </div>
-          <p className="text-sm text-ink">
-            Outstanding is the sum of totals for invoices in <strong>Unpaid</strong> or{' '}
-            <strong>Overdue</strong> status.
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted">
-            <Calculator size={14} /> Tax formula
-          </div>
-          <p className="font-mono text-xs text-ink">tax = round(amount × rate / 100, 2)</p>
-          <p className="mt-1 font-mono text-xs text-ink">total = amount + tax</p>
-        </div>
       </section>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCustomers, fetchTop5Customers, fetchCustomer } from '../api/customers';
+import { fetchSummary } from '../api/summary';
 
 export function useCustomers() {
   return useQuery({
@@ -22,5 +23,13 @@ export function useCustomer(id) {
     queryKey: ['customer', id],
     queryFn: () => fetchCustomer(id),
     enabled: !!id,
+  });
+}
+
+export function useSummary() {
+  return useQuery({
+    queryKey: ['summary'],
+    queryFn: fetchSummary,
+    staleTime: 30_000,
   });
 }
