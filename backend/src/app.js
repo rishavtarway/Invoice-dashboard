@@ -39,6 +39,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Invoice Dashboard API',
+    version: '1.0.0',
+    docs: '/api/health for liveness · /api/invoices · /api/customers · /api/summary',
+    frontend: 'https://github.com/rishavtarway/Invoice-dashboard',
+  });
+});
+
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/summary', summaryRoutes);
