@@ -17,6 +17,74 @@ A production-quality full-stack invoice management dashboard built for the Power
 
 ---
 
+## Data model
+
+The dataset is split into **two collections** instead of one denormalized `invoices` blob.
+
+### Why two collections?
+
+- **1:1 customer-company mapping is enforced by the data.** The 2,000 invoices collapse to 61 unique `(name, company)` pairs. Storing `customer` and `company` on every invoice row would be 2,000 × 2 = 4,000 redundant string fields, and a typo on one row would create a "phantom" customer.
+- **Server-side aggregation needs the customer dimension.** The top-5 query is `group by customerId → sum(total) → sort desc → limit 5`. A denormalized blob would force a string-compare on 2,000 rows on every page load; a normalized schema does it on 61.
+- **Pagination, filters, and sorts are cheaper on indexed customer FKs.** The compound index `{ customerId: 1, status: 1, dueDate: 1 }` makes the common query (this customer's Draft and Unpaid invoices, sorted by due date) a covered scan.
+
+### `customers` collection
+
+| Field      | Type     | Notes                                |
+|------------|----------|--------------------------------------|
+| `_id`      | ObjectId | auto                                 |
+| `name`     | string   | required, indexed                    |
+| `company`  | string   | required, unique with `name`         |
+
+Unique compound index on `(name, company)` enforces the 1:1 mapping at the database level — the seed script pre-derives this and the API never lets it drift.
+
+### `invoices` collection
+
+| Field       | Type     | Notes                                                              |
+|-------------|----------|--------------------------------------------------------------------|
+| `_id`       | ObjectId | auto                                                               |
+| `invoiceId` | string   | `INV-xxxxxxxx` (auto-gen, unique)                                  |
+| `customerId`| ObjectId | ref → `customers._id`, indexed                                     |
+| `amount`    | number   | pre-tax, ≥ 0                                                       |
+| `taxRate`   | number   | enum: 0, 3, 5, 18, 28                                              |
+| `tax`       | number   | **server-computed** (`amount × taxRate / 100`)                     |
+| `total`     | number   | **server-computed** (`amount + tax`)                               |
+| `status`    | string   | enum: Draft, Sent, Paid, Unpaid, Overdue, Void                     |
+| `issueDate` | Date     | ISO 8601                                                           |
+| `dueDate`   | Date     | ISO 8601, must be ≥ issueDate                                      |
+| `createdAt` | Date     | auto                                                               |
+| `updatedAt` | Date     | auto                                                               |
+
+### Indexes
+
+- `customers`: `{ name: 1, company: 1 }` unique
+- `invoices`: `{ invoiceId: 1 }` unique
+- `invoices`: `{ customerId: 1, status: 1, dueDate: 1 }` — covers the customer-profile "give me this customer's invoices by status, sorted by due" path
+- `invoices`: `{ status: 1, issueDate: -1 }` — covers the dashboard list sorted by newest
+- `invoices`: `{ customerId: 1, total: -1 }` — covers the top-5 aggregation
+- `invoices`: `{ invoiceId: 'text', 'customerSnapshot.name': 'text' }` — search
+
+### What the server owns (never trust the client)
+
+- `tax` and `total` are always recomputed on POST and PUT — the client sends `amount` and `taxRate`, the server returns the authoritative numbers.
+- `invoiceId` is always server-generated to guarantee uniqueness and a consistent prefix.
+- `customerSnapshot.name` and `customerSnapshot.company` are denormalized onto the invoice at create time so the list endpoint doesn't need a `$lookup` for every row. The seed script does the same; this trades a tiny write-time cost for a much cheaper read path.
+
+---
+
+## Assumptions
+
+- **Currency is INR.** All `formatCurrency` calls render the `₹` symbol. The dataset contains no currency field, so no conversion logic exists.
+- **Tax is a percentage, not a decimal.** A row with `taxRate: 18` and `amount: 1000` has `tax: 180`, not `18.00`.
+- **`tax` and `total` are always derived from `amount` + `taxRate`.** Even if a client sends them, the server overwrites them.
+- **1 customer = 1 company.** Enforced by a unique compound index; the API does not expose a way to assign the same customer to a second company.
+- **`dueDate` must be on or after `issueDate`.** Enforced in the Zod refinement; the database doesn't know "on or after" without a custom validator.
+- **Past `issueDate` is allowed.** The seed contains 2025-06 dates paired with 2026-06 due dates. The form allows free choice.
+- **Deletion is hard.** No soft-delete column; the API does `findByIdAndDelete`.
+- **No authentication / authorization.** Out of scope for the assignment; the API is fully open.
+- **Render free-tier cold starts can take 30-60s.** The frontend axios instance is configured with a 60s timeout and a single retry on timeout/Network Error so the first request after the service spins down succeeds transparently.
+
+---
+
 ## Quick start (Docker)
 
 ```bash
