@@ -36,6 +36,12 @@ docker compose exec backend node src/scripts/seed.js
 
 ---
 
+## Deployment
+
+Free-tier guide for **Vercel** (frontend) + **Render** (backend) + **MongoDB Atlas** (database) — see [DEPLOY.md](./DEPLOY.md).
+
+---
+
 ## Local development (without Docker)
 
 ### Prerequisites
@@ -108,4 +114,6 @@ See the per-folder `README`/comments for details.
 
 ## License
 
-Assignment submission — all rights reserved by the author.
+This project is licensed under the **MIT License** — see the [LICENSE](./LICENSE) file for the full text.
+
+Copyright © 2026 rishavtarway
