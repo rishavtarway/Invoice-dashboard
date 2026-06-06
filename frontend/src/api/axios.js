@@ -11,14 +11,22 @@ if (import.meta.env.PROD && (!import.meta.env.VITE_API_BASE_URL || !baseURL.ends
 
 const api = axios.create({
   baseURL,
-  timeout: 15000,
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Flatten server error → Error.message
+// Retry once on timeout / network error (Render free tier cold starts take 30-60s).
+// Non-retryable: 4xx/5xx with a server body.
 api.interceptors.response.use(
   (res) => res,
-  (error) => {
+  async (error) => {
+    const cfg = error.config || {};
+    const isNetworkOrTimeout = !error.response && (error.code === 'ECONNABORTED' || error.message === 'Network Error');
+    if (isNetworkOrTimeout && !cfg.__retried) {
+      cfg.__retried = true;
+      await new Promise((r) => setTimeout(r, 2000));
+      return api(cfg);
+    }
     const message =
       error.response?.data?.error ||
       error.message ||
